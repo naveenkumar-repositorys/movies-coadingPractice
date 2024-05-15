@@ -25,6 +25,18 @@ let convertDbObjectToResponseObject = (dbFile) => {
   };
 };
 
+let getDirectorsNames = (dbResponse) => {
+  return {
+    directorName: dbResponse.director_name,
+  };
+};
+
+const onlyDirectorMovies = (dbResponse) => {
+  return {
+    movieName: dbResponse.movie_name,
+  };
+};
+
 let initializationDbAndServer = async () => {
   try {
     db = await open({
@@ -74,8 +86,69 @@ app.post("/movies/", async (request, response) => {
 app.get("/movies/:movieId/", async (request, response) => {
   let { movieId } = request.params;
   let requiredMovieQuery = `SELECT * FROM movie 
-    WHERE movie_id = ${movieId};`;
+    WHERE 
+        movie_id = ${movieId};`;
   let foundDb = await db.get(requiredMovieQuery);
-  let requiredFormat = foundDb.map((eachItem) => convertDbObject(eachItem));
-  console.log(requiredFormat);
+  //console.log(foundDb);
+  let requiredFormat = convertDbObject(foundDb);
+  //console.log(requiredFormat);
+  response.send(requiredFormat);
 });
+
+//API-4
+
+app.put("/movies/:movieId/", async (request, response) => {
+  let { movieId } = request.params;
+  let { directorId, movieName, leadActor } = request.body;
+  const updatedQuery = `UPDATE  movie
+    SET 
+        director_id = ${directorId},
+        movie_name = "${movieName}",
+        lead_actor = "${leadActor}"
+    WHERE 
+        movie_id = ${movieId};`;
+
+  let dbResponse = await db.run(updatedQuery);
+  //console.log(dbResponse);
+  response.send("Movie Details Updated");
+});
+
+//API-5
+
+app.delete("/movies/:movieId/", async (request, response) => {
+  let { movieId } = request.params;
+  let deleteQuery = `DELETE FROM movie
+    WHERE 
+        movie_id = ${movieId};`;
+  let deletedDb = await db.run(deleteQuery);
+  //console.log(deletedDb);
+  response.send("Movie Removed");
+});
+
+//API-6
+
+app.get("/directors/", async (request, response) => {
+  let gettingListOfDirectorsQuery = `SELECT * FROM director`;
+  let dbResponse = await db.all(gettingListOfDirectorsQuery);
+  let getObjectEle = dbResponse.map((eachEle) => getDirectorsNames(eachEle));
+  //console.log(getObjectEle);
+  response.send(getObjectEle);
+});
+
+// API-7
+
+app.get("/directors/:directorId/movies/", async (request, response) => {
+  let { directorId } = request.params;
+  const moviesOFDirectorQuery = `SELECT * FROM movie 
+        WHERE 
+            director_id = ${directorId};`;
+  let dbResponse = await db.all(moviesOFDirectorQuery);
+  let responseObject = dbResponse.map((eachItem) =>
+    onlyDirectorMovies(eachItem)
+  );
+  console.log(responseObject);
+  response.send(responseObject);
+});
+
+module.exports = app;
+
