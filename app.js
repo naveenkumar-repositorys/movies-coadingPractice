@@ -27,6 +27,7 @@ let convertDbObjectToResponseObject = (dbFile) => {
 
 let getDirectorsNames = (dbResponse) => {
   return {
+    directorId:dbResponse.director_id,
     directorName: dbResponse.director_name,
   };
 };
